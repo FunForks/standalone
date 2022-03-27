@@ -145,7 +145,7 @@ You've just levelled up in your journey to be a web developer. You're about to a
     "serve": "live-server src",
     "watch": "sass --watch src/scss:src/styles",
     "start": "run-p serve watch"
-  }
+   }
    ```
 7. In the Terminal, run this command: `npm start`.
 8. `npm start` is a special command. It is a shortcut for `npm run start`.
