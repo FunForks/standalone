@@ -128,7 +128,7 @@ You've just levelled up in your journey to be a web developer. You're about to a
      href="styles/main.css"
    >
    ```
-2. If Live-server is not still active un the command: `npm run serve`.
+2. If Live-server is not still active run the command: `npm run serve`.
 3. You should see that your headline is now darkred.
 
 ---
@@ -161,3 +161,190 @@ You've just levelled up in your journey to be a web developer. You're about to a
    git add . && git commit -m "Barebones standalone project"
    ```
 3. Notice that the `node_modules/` and `src/styles/` folders appear in grey (not white) in VS Code's Explorer pane. This indicates that Git is not tracking them. 
+
+### Push your Repository to GitHub
+
+In the past, you started by creating a repository on GitHub, and then you cloned it to your local computer. Here you will learn how to connect your existing repo on your local computer to a repository on GitHub.
+
+1. Visit your account on GitHub.
+2. Select the Repositories tab.
+3. Click on the green New button.
+4. Give your new repository a name. I'll use "Deploy-Test", but you can use whatever name you want. 
+5. Leave all the radiobuttons and checkboxes at their default values.
+6. Click on the green Create Repository button.
+7. In the second section of the Quick Setup, copy the three lines that appear after the sub-header **...or push an existing repository...**:
+   '''bash
+   git remote add origin git@github.com:<yourAccountName>/<yourRepoName>.git
+   git branch -M main
+   git push -u origin main
+   ```
+8. In a Terminal pane in the VS Code window which is open in your project folder, paste these lines and press Enter.
+9. Run `git remote -v` to check that a remote named "origin" has been created.
+10. In your browser, refresh the GitHub page. You should see a list of your files and folders.
+
+---
+# Deploy to GitHub Pages
+
+Up until now, you have been working in a development environment, serving your web pages with Live-Server from your local computer. Only you (on your computer) and other people on your local network can see your pages.
+
+To share your work with the world, you need to _deploy_ to a production server. You can do this very simply on [GitHub.com](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site), with a few point-and-click actions.
+
+You can also use a node module called `gh-pages` (for GitHub Pages), to do this directly from your local repository, using a local Terminal window.
+
+
+## Installing the `gh-pages` module
+
+1. Run `npm i --save-dev gh-pages`.
+2. Look in `package.json` to see that it has been installed:
+   ```bash
+   "devDependencies": {
+     "gh-pages": "latest",
+     "live-server": "latest",
+     "npm-run-all": "latest",
+     "sass": "latest"
+   }
+   ```
+   Alternatively, you can run `npm list` to see what node modules have been installed:
+   ```bash
+   $ npm list
+   npm-standalone@1.0.0 /Users/james/Documents/DCI/Repos/DCIForks/   SASS/npm-standalone
+   ├── gh-pages@3.2.3
+   ├── live-server@1.2.1
+   ├── npm-run-all@4.1.5
+   └── sass@1.49.9
+   ```
+
+## Creating a Production Build
+
+When you are developing a project, the code you are editing and adding to is not yet optimized. When everything is working correctly, you want to remove all the extra data and tools that you used during development.
+
+When builders finish building a house, they take away all the cranes and scaffolding, bulldozers, concrete mixers, power tools and protective plastic sheeting, to leave the house pleasant for the people who are going to live in it.
+
+The code and data that the outside world sees is the _production build_ of your web site. Fortunately, there are modules that are specifically designed for cleaning out your work.
+
+In this section, you will see how to:
+
+* Remove any previous production build
+* Delete any current CSS files
+* Generate a new set of up-to-date CSS files
+* Create a new production build from the current `src/` folder (omitting any SCSS files which are only needed during development)
+* Create a special `deploy` branch for the production build
+* Push the `deploy` branch to your account on GitHub.io (note the `.io` top level domain here)
+
+You will then be able to give a URL with the format [https://yourAccountName.github.io/yourRepositoryName]() to anyone who might be interested: fellow students, friends, future employers, end users, clients, ...
+
+Your site will be live.
+
+### Creating a `dist` directory
+
+1. In the Terminal you can run the following lines of code:
+   ```bash
+   mkdir dist
+   rsync -av --exclude="/scss" src/ dist
+   ```
+   * The first line creates a directory called `dist`.
+   * The second line uses a bash tool call [rsync](https://linux.die.net/man/1/rsync) to copy all the files from the `src` folder to the new `dist` folder... all except for the `scss/` folder which contains CSS in a format that browsers do not understand. The `styles/` folder containing regular CSS will be copied instead.
+   * The `-av` flags mean:
+     -a: archive (preserve all ownership, permissions and metadata, recursively)
+     -v: verbose (report on which files were copied)
+2. You should see that a new `dist/` folder has appeared, with the contents copied from the `src/` folder:
+   ```
+   dist
+   ├── index.html
+   └── styles
+       ├── main.css
+       └── main.css.map
+   ```
+3. Because of the `-v` flag, you should see something like this in the Terminal pane:
+   ```   
+   building file list ... done
+   ./
+   index.html
+   styles/
+   styles/main.css
+   styles/main.css.map
+   ```
+   * You can check that all the files in the `src/` folder and their subfolders have been copied, apart from `scss/` and its contents.
+
+### Creating a "publish" script
+
+1. Add a new entry to the `scripts` section of your package.json file:
+   ```json
+   "scripts": {
+    "serve": "live-server src",
+    "watch": "sass --watch src/scss:src/styles",
+    "start": "run-p serve watch",
+    "publish": "gh-pages -d dist"
+   }
+   ```
+2. Now you can execute the command `npm run publish`.
+3. In your browser, visit the page [https://yourAccountName.github.io/Deploy-Test]()
+4. You will probably see a 404 error. This is normal. Many people are pushing data to GitHub and deploying their sites at the same time. Your deploy request will have been added to a queue and will be treated within a few minutes.
+5. Refresh the page every minute or so, and eventually you should see:
+   **Your web site goes here**
+
+## Automating the Deployment Process
+
+You can reduce the deployment process to a single command in the Terminal: `npm run deploy`. To do this, you will need to add a number of entries to the `"scripts"` section of your package.json file.
+
+1. First, you should remove the existing `dist/` folder. A little later, you will recreate the folder with the latest data from the `src/` folder.
+   * To delete a folder and all its contents, you already know the `rm -rf <folderName>` bash command.
+   * `rm` means "remove"
+   * `-rf` means "recursively" (remove all contents from all sub-folders) and "forced" (don't ask to confirm each deletion.)
+
+2. Here's a script to add to the `"scripts"` section of your package.json file which will remove the `dist/` folder:
+    ```bash
+    "clean": "rm -rf dist",
+    ```
+3. And here's one to delete the `src/styles/` folder:
+   ```bash
+   "clean:styles": "rm -rf src/styles",
+   ```
+
+4. Now you want to recreate the `src/styles` folder from the latest version of whatever is in the `src/scss/` folder. Note that you don't want to `--watch` for changes; you want to apply the current SCSS.
+5. Here's a new script to add to the `"scripts"` section of your package.json file which will do this:
+   ```bash
+   "build:styles": "sass src/scss:src/styles",
+   ```
+6. One last step: you want to recreate the `dist/` folder. You can use the same command you used manually earlier:
+   ```bash
+   "copy": "mkdir dist && rsync  --exclude=\"/scss\" src/ dist",
+   ```
+   * Note 1: `&&` means "if the first command succeeds (i.e. `mkdir dist`), then perform the second command (i.e. `rsync ...`). If not, stop here."
+   * Note 2: The double-quotes in `"/scss"` need to be _escaped_, because the whole command is wrapped in double-quotes. If the anti-slash before the quotes around `\"scss/\"` were removed, npm would think that the command was `"mkdir dist && rsync  --exclude="`, followed by some garbage. The escape `\` characters mean "treat the next character as part of this string, not as the end of the string."
+
+7. Now we can make a `"build"` script which will run all these new scripts. It will use the `npm-run-all` module to execute each script `-s`equentially (one after another):
+   ```bash
+   "build": "run-s clean clean:styles build:styles copy",
+   ```
+8. You've already created a `"publish"` script that uses the `gh-pages` module to push your work to GitHub. Here it is as a reminder:
+   ```bash
+   "publish": "gh-pages -d dist",
+   ```
+
+9. So now you need just one last script that makes all the others run sequentially, ending with `"publish"`:
+   ```bash
+   "deploy": "run-s build publish"
+
+### The Complete `scripts` Section
+
+```json
+"scripts": {
+  "serve": "live-server src",
+  "watch": "sass --watch src/scss:src/styles",
+  "start": "run-p serve watch",
+
+  "clean": "rm -rf dist",
+  "clean:styles": "rm -rf src/styles",
+  "build:styles": "sass src/scss:src/styles",
+  "copy": "mkdir dist && rsync  --exclude=\"/scss\" src/ dist",
+  "build": "run-s clean clean:styles build:styles copy",
+  "publish": "gh-pages -d dist",
+  "deploy": "run-s build publish"
+}
+```
+Now you can make any changes you like to your project locally, and, when you are ready to go live, all you will need to type is:
+
+  ```bash
+  npm run deploy
+  ```
